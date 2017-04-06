@@ -83,7 +83,7 @@ func BinCheck() (passed bool, messages []string) {
     // now we have a bin, start the check again
     } else {
       messages = append(messages, " * downloaded the files and created the gopherSeq_bin!\n")
-      messages = append(messages, " * please refresh your session with `source ~/.bashrc` and then re-try gopheSeq\n")
+      messages = append(messages, " * please refresh your session with `source ~/.profile` and then re-try gopheSeq\n")
       passed = false
       return
     }
@@ -126,7 +126,7 @@ func NewBin() (passed bool){
   // make new bin
   homeDir, _ := homedir.Dir()
   newBin := homeDir + "/.gopherSeq_bin/"
-  if err := os.Mkdir(newBin, 0700); err != nil {
+  if err := os.Mkdir(newBin, 0777); err != nil {
     fmt.Println("can't make gopherSeq_bin - does it already exist?\n")
     fmt.Println(err)
     passed = false
@@ -163,21 +163,26 @@ func NewBin() (passed bool){
       passed = false
       break
     }
+    err = os.Chmod(fileName, 0777)
+    if err != nil {
+      passed = false
+      break
+    }
   }
 
-  // set and test env variable, then add to .bashrc
+  // set and test env variable, then add to .profile
   os.Setenv("gopherSeq_bin", newBin)
   if len(os.Getenv("gopherSeq_bin")) == 0 {
     return false
   } else {
-    exportCmd := "export gopherSeq_bin=\"" + newBin + "\" >> ~/.bashrc\n"
-    f, err := os.OpenFile(homeDir + "/.bashrc", os.O_APPEND|os.O_WRONLY, 0600)
+    exportCmd := "export gopherSeq_bin=\"" + newBin + "\" >> ~/.profile\n"
+    f, err := os.OpenFile(homeDir + "/.profile", os.O_APPEND|os.O_WRONLY, 0600)
     if err != nil {
       panic(err)
     }
     defer f.Close()
     if _, err = f.WriteString(exportCmd); err != nil {
-      fmt.Println("couldn't add gopherSeq_bin export statement to .bashrc file!\n\n")
+      fmt.Println("couldn't add gopherSeq_bin export statement to .profile file!\n\n")
       os.Exit(1)
     }
     return true

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/will-rowe/gopherSeq.svg?token=3C9jB5PWJdEaFWtpYcWU&branch=master)](https://travis-ci.com/will-rowe/gopherSeq)
+[![Build Status](https://travis-ci.org/will-rowe/gopherSeq.svg?branch=master](https://travis-ci.com/will-rowe/gopherSeq)
 <img src="https://github.com/will-rowe/will-rowe.github.io/raw/master/images/gopher.png" align="right" width="68" >
 
 # gopherSeq
@@ -17,14 +17,14 @@ A set of simple pipelines and tools for microbial whole genome sequence data
 
 Download, uncompress and add the binary to your PATH:
 
-* [linux]()
-* [OSX]()
+* [linux](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.linux.tar)
+* [OSX](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.osx.tar)
 
 ### Alternatively
 
 Install using Go:
 ```
-go get -u github.com/will-rowe/gopherSeq
+go get -u github.com/will-rowe/gopherSeq/cmd/gopherSeq
 go install github.com/will-rowe/gopherSeq/cmd/gopherSeq
 ```
 
@@ -55,7 +55,7 @@ This is a list of required software (not included in this repo):
 **IMPORTANT** --> In addition to the above software, this program also requires a special bin to be set (called `gopherSeq_bin`). The program can set this up for you, just run the `envtest` command. Alternatively, download the bin from this repo and create an environment variable to point to it:
 
 ```
-echo export gopherSeq_bin=\"/path/to/gopherSeq/bin\" >> ~/.bashrc
+echo export gopherSeq_bin=\"/path/to/gopherSeq/bin\" >> ~/.profile
 ```
 
 If you want the `qcheck` command to run Kraken and Trimmomatic adapter removal, you need to create 2 symbolic links in the gopherSeq_bin. The naming of these links is important:
@@ -80,7 +80,7 @@ ln -s /path/to/adapters/TruSeq3-SE.fa $gopherSeq_bin/adapters.fa
 
 ### envtest
 
-This just tests the environment to make sure that the required software can be found and that the `gopherSeq_bin` has been set up. If it needs to set up the bin, it will download the files, add an export statement to your .bashrc file and then exit.
+This just tests the environment to make sure that the required software can be found and that the `gopherSeq_bin` has been set up. If it needs to set up the bin, it will download the files, add an export statement to your .profile file and then exit.
 
 Basic usage:
 ```
