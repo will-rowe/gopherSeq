@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/will-rowe/gopherSeq.svg?branch=master](https://travis-ci.com/will-rowe/gopherSeq)
+[![Build Status](https://travis-ci.org/will-rowe/gopherSeq.svg?branch=master)](https://travis-ci.org/will-rowe/gopherSeq)
 <img src="https://github.com/will-rowe/will-rowe.github.io/raw/master/images/gopher.png" align="right" width="68" >
 
 # gopherSeq
