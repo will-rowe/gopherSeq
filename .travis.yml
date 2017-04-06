@@ -1,0 +1,22 @@
+sudo: required
+
+dist: trusty
+
+language: go
+
+go:
+  - 1.7
+
+go_import_path: github.com/will-rowe/gopherSeq
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y fastqc bowtie2 python-pip
+  - ./test/install-dependencies.sh
+
+install:
+  - go get github.com/alexflint/go-arg
+  - go get github.com/mitchellh/go-homedir
+
+script:
+  - cd test && bash test.sh ; cd ..
