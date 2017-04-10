@@ -11,14 +11,21 @@ A set of simple pipelines and tools for microbial whole genome sequence data
 
 ***
 
+## Contents
+
+[Installation](https://github.com/will-rowe/gopherSeq#installation)
+
+[Commands](https://github.com/will-rowe/gopherSeq#commands)
+
+
 ##  Installation
 
 ### Download a binary
 
 Download, uncompress and add the binary to your PATH:
 
-* [linux](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.linux.tar)
-* [OSX](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.osx.tar)
+* [linux](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.linux.tar.gz)
+* [OSX](https://github.com/will-rowe/gopherSeq/releases/download/0.0.1/gopherSeq.osx.tar.gz)
 
 ### Alternatively
 
@@ -28,7 +35,7 @@ go get -u github.com/will-rowe/gopherSeq/cmd/gopherSeq
 go install github.com/will-rowe/gopherSeq/cmd/gopherSeq
 ```
 
-Or, download the source and compile into executable:
+Or, download the source and compile into executable with Go build:
 ```
 git clone https://github.com/will-rowe/gopherSeq
 cd ./gopherSeq/cmd/gopherSeq
@@ -44,7 +51,7 @@ This is a list of required software (not included in this repo):
 
 | qcheck | align |
 | ------------- | ------------- |
-| java | bowtie2 |
+| java (1.8) | bowtie2 |
 | fastqc | samtools (1.4) |
 | trimmomatic | bcftools(1.4) |
 | kraken | |
