@@ -41,7 +41,7 @@ var check_programs = []string{
 var align_programs = []string{
 	"bash",
 	"java",
-	"bowtie2",
+	"bwa",
 	"samtools",
 	"bcftools",
 }
@@ -89,8 +89,7 @@ func BinCheck() (passed bool, messages []string) {
 		passed = true
 		messages = append(messages, " * found gopherSeq_bin --> "+os.Getenv("gopherSeq_bin")+"\n")
 		gatk := "java -jar $gopherSeq_bin/GenomeAnalysisTK.jar -h"
-		err := exec.Command("bash", "-c", gatk).Run()
-		if err != nil {
+		if err := exec.Command("bash", "-c", gatk).Run(); err != nil {
 			messages = append(messages, " * GATK not working - check the java and GATK install\n")
 			passed = false
 		} else {

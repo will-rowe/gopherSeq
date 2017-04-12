@@ -5,8 +5,8 @@ This package is a simple pipeline to align WGS data to a reference genome.
 The steps included are:
 
  * collect sample information (paired/single-end etc.)
- * generate indices for a reference (bowtie2, faidx + fasta dict)
- * runs Bowtie2 alignment
+ * generate indices for a reference (BWA, faidx + fasta dict)
+ * runs BWA alignment
  * processes alignment files
  * runs GATK indel correction
  * calls variants using mpileup and bcftools
@@ -231,41 +231,44 @@ func getLogging() {
   function to generate indices from reference
 */
 func createIndex() {
-	bt2_reference := args.Output_dir + "/tmp/bt2_ref"
-	if err := exec.Command("bowtie2-build", args.Reference, bt2_reference).Run(); err != nil {
-		logger.Printf(" * couldn't create the bowtie2 index! Check the reference sequence\n")
-		os.Exit(1)
-	}
-	index_cmd := "cp " + args.Reference + " " + args.Output_dir + "/tmp/reference.fa && samtools faidx " + args.Output_dir + "/tmp/reference.fa && samtools dict " + args.Output_dir + "/tmp/reference.fa >" + args.Output_dir + "/tmp/reference.dict"
+	reference := args.Output_dir + "/tmp/reference.fa"
+	index_cmd := "cp " + args.Reference + " " + reference + " && samtools faidx " + reference + " && samtools dict " + reference + " > " + args.Output_dir + "/tmp/reference.dict"
 	if err := exec.Command("bash", "-c", index_cmd).Run(); err != nil {
 		fmt.Println(index_cmd)
 		logger.Printf(" * couldn't create the faidx index! Check the reference sequence\n")
 		os.Exit(1)
 	}
+	if err := exec.Command("bwa", "index", reference).Run(); err != nil {
+		logger.Printf(" * couldn't create the BWA index! Check the reference sequence\n")
+		os.Exit(1)
+	}
+
 }
 
 /*
-  function to run Bowtie2
+  function to run BWA
 */
-func runBowtie2() {
-	bt2_reference := args.Output_dir + "/tmp/bt2_ref"
+func runBWA() {
+	reference := args.Output_dir + "/tmp/reference.fa"
 
 	// loop through samples, running one alignment at a time
 	for sample, info := range samples {
 		logger.Printf(" * aligning reads from %s", sample)
 		outfile := args.Output_dir + "/tmp/alignment_file." + sample + ".sorted.bam"
-		bt2_cmd := "bowtie2 -x " + bt2_reference + " --rg-id foo --rg SM:bar’ -p " + threads
+		BWAcmd := []string{}
+		BWAcmd = append(BWAcmd, "bwa mem -t ", threads, " -R '@RG\tID:foo\tSM:bar\tLB:library1' ", reference)
 
-		// customise bowtie2 command based on sample type
+		// customise BWA command based on sample type
 		if info.paired == true {
-			bt2_cmd = bt2_cmd + " -1 " + info.path_to_reads_1 + " -2 " + info.path_to_reads_2
+			BWAcmd = append(BWAcmd, " ", info.path_to_reads_1, " ", info.path_to_reads_2)
 		} else {
-			bt2_cmd = bt2_cmd + " -U " + info.path_to_reads_1
+			BWAcmd = append(BWAcmd, " ", info.path_to_reads_1)
 		}
 		// pipe the alignment into samtools -- filter, fixmate, sort
-		piped_cmd := bt2_cmd + " | samtools view -@ " + threads + " -q 10 -bh - | samtools fixmate -@ " + threads + " -O bam - - | samtools sort -@ " + threads + " - -o " + outfile
-		if err := exec.Command("bash", "-c", piped_cmd).Run(); err != nil {
-			logger.Printf("failed to execute alignment: %s", piped_cmd)
+		BWAcmd = append(BWAcmd, " | samtools view -@ ", threads, " -q 10 -bh - | samtools fixmate -@ ", threads, " -O bam - - | samtools sort -@ ", threads, " - -o ", outfile)
+
+		if err := exec.Command("bash", "-c", strings.Join(BWAcmd, " ")).Run(); err != nil {
+			logger.Printf("failed to execute alignment: %s", err)
 			os.Exit(1)
 		}
 
@@ -300,7 +303,7 @@ func runGATK(sample string) {
 	}
 
 	// realign indels
-	logger.Printf("\t* realigning indels for %s ]", bam_nodup)
+	logger.Printf("\t* realigning indels for %s", bam_nodup)
 	outfile := args.Output_dir + "/bams/alignment_file." + sample + ".sorted.nodup.indels_corrected.bam"
 	IR := "java -Xmx2g -Xss512k -jar $gopherSeq_bin/GenomeAnalysisTK.jar -T IndelRealigner -nct 1 -R " + args.Output_dir + "/tmp/reference.fa -I " + bam_nodup + " -targetIntervals " + args.Output_dir + "/tmp/realigner.intervals -o " + outfile
 	if err := exec.Command("bash", "-c", IR).Run(); err != nil {
@@ -320,8 +323,16 @@ func runSNPcall(sample string, worker int) {
 	info := samples[sample]
 
 	// run mpileup
+        /*
+        d - at a position, read maximally INT reads per input file
+        g - compute genotype likelihoods and output them in the binary call format (BCF)
+        u - uncompressed output
+        B - disable probabilistic realignment for the computation of base alignment quality (BAQ) - we've used GATK
+        t - output tags (DP=no. high qual. bases, SP=phred-scaled strand bias P-value)
+        f - the faidx-indexed reference file in the FASTA forma
+        */
 	logger.Printf("\t[ worker %d: * running mpileup on %s ]", worker, sample)
-	MPILEUP := "samtools mpileup -d 1000 -DSugBf " + args.Output_dir + "/tmp/reference.fa " + info.path_to_bam + " > " + args.Output_dir + "/tmp/" + sample + ".tmp.bcf"
+	MPILEUP := "samtools mpileup -d 1000 -guB -t DP,DV,DP4,SP -f " + args.Output_dir + "/tmp/reference.fa " + info.path_to_bam + " > " + args.Output_dir + "/tmp/" + sample + ".tmp.bcf"
 	if err := exec.Command("bash", "-c", MPILEUP).Run(); err != nil {
 		logger.Printf("failed to run mpileup: %s", MPILEUP)
 		logger.Printf("error: %s", err)
@@ -480,14 +491,14 @@ func Main() {
 	logger.Printf(" * keeping temporary files --> %t", args.Keep)
 	logger.Printf(" * output directory --> %s", args.Output_dir)
 
-	// create Bowtie2 index
-	logger.Printf("building Bowtie2 index . . .")
+	// create BWA index
+	logger.Printf("building BWA index . . .")
 	createIndex()
 
-	// run Bowtie2
+	// run BWA
 	logger.Printf("--- started read alignment ---")
-	logger.Printf("running Bowtie2 and sorting with Samtools . . .")
-	runBowtie2()
+	logger.Printf("running BWA and sorting with Samtools . . .")
+	runBWA()
 
 	// run InDel correction and perform mpileup
 	logger.Printf("--- started InDel correction & SNP call ---")
