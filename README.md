@@ -51,7 +51,7 @@ This is a list of required software (not included in this repo):
 
 | qcheck | align |
 | ------------- | ------------- |
-| java (1.8) | bowtie2 |
+| java (1.8) | bwa |
 | fastqc | samtools (1.4) |
 | trimmomatic | bcftools(1.4) |
 | kraken | |
